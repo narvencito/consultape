@@ -38,7 +38,7 @@
         "http"
     ],
     "paths": {
-        "/public/api/sunat/ruc/{ruc}": {
+        "/public/api/ruc/{ruc}": {
             "get": {
                 "tags": [
                     "SUNAT"
@@ -317,7 +317,7 @@
                 }
             }
         },
-        "/public/api/jne/dni/{dni}": {
+        "/public/api/dni/{dni}": {
             "get": {
                 "tags": [
                     "RENIEC"

@@ -3,7 +3,6 @@ var request = require("request");
 const cheerio = require("cheerio");
 const async = require("async");
 const jszip = require("jszip");
-const http = require('http');
 const https = require('https');
 
 var opts = {

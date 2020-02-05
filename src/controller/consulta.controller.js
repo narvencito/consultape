@@ -39,6 +39,7 @@ function getEssaludInformation(dni, callback) {
 			persona.nombres = d.Nombres;
 			persona.apellidoPaterno = d.ApellidoPaterno;
 			persona.apellidoMaterno = d.ApellidoMaterno;
+			persona.fechaNacimientoUTC=d.FechaNacimiento,
 			persona.fechaNacimiento = parseISOString(d.FechaNacimiento);
 			if (d.Sexo === '2')
 				persona.sexo = "MASCULINO";

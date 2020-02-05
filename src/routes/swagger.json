@@ -613,6 +613,9 @@
                 "apellidoMaterno": {
                     "type": "string"
                 },
+                "fechaNacimientoUTC": {
+                    "type": "string"
+                },
                 "fechaNacimiento": {
                     "type": "string",
                     "format": "date"

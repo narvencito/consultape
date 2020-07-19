@@ -17,7 +17,7 @@ var opts = {
 var options = {
 	headers: {
 		"Content-Type": "application/json;chartset=utf-8",
-		"Requestverificationtoken": "30OB7qfO2MmL2Kcr1z4S0ttQcQpxH9pDUlZnkJPVgUhZOGBuSbGU4qM83JcSu7DZpZw-IIIfaDZgZ4vDbwE5-L9EPoBIHOOC1aSPi4FS_Sc1:clDOiaq7mKcLTK9YBVGt2R3spEU8LhtXEe_n5VG5VLPfG9UkAQfjL_WT9ZDmCCqtJypoTD26ikncynlMn8fPz_F_Y88WFufli38cUM-24PE1"
+		"Requestverificationtoken": "Dmfiv1Unnsv8I9EoXEzbyQExSD8Q1UY7viyyf_347vRCfO-1xGFvDddaxDAlvm0cZ8XgAKTaWclVFnnsGgoy4aLlBGB5m-E8rGw_ymEcCig1:eq4At-H2zqgXPrPnoiDGFZH0Fdx5a-1UiyVaR4nQlCvYZzAhzmvWxLwkUk6-yORYrBBxEnoG5sm-Hkiyc91so6-nHHxIeLee5p700KE47Cw1"
 	}
 };
 var ciudadano = request.defaults(options);
@@ -39,8 +39,8 @@ function getEssaludInformation(dni, callback) {
 			persona.nombres = d.Nombres;
 			persona.apellidoPaterno = d.ApellidoPaterno;
 			persona.apellidoMaterno = d.ApellidoMaterno;
-			persona.fechaNacimientoUTC=d.FechaNacimiento,
-			persona.fechaNacimiento = parseISOString(d.FechaNacimiento);
+			persona.fechaNacimientoUTC = d.FechaNacimiento,
+				persona.fechaNacimiento = parseISOString(d.FechaNacimiento);
 			if (d.Sexo === '2')
 				persona.sexo = "MASCULINO";
 			else
@@ -139,15 +139,19 @@ function getReniecInformation(dni, callback) {
 			if (err) {
 				return callback(err);
 			} else {
-				var d = item.data.split("|");
-				persona.dni = dni;
-				persona.nombres = d[2];
-				persona.apellidoPaterno = d[0];
-				persona.apellidoMaterno = d[1];
-				persona.codVerifica = getCode(dni);
-				return callback(null, persona);
+				if (item.success) {
+					var d = item.data.split("|");
+					persona.dni = dni;
+					persona.nombres = d[2];
+					persona.apellidoPaterno = d[0];
+					persona.apellidoMaterno = d[1];
+					persona.codVerifica = getCode(dni);
+					return callback(null, persona);
+				} else {
+					return callback(item.mensaje);
+				}
 			}
-		});	
+		});
 }
 
 function getCaptcha(base, cb) {

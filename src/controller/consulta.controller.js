@@ -3,7 +3,6 @@ var request = require("request");
 const cheerio = require("cheerio");
 const async = require("async");
 const jszip = require("jszip");
-const https = require('https');
 
 var opts = {
 	jar: true,
@@ -25,32 +24,50 @@ request = request.defaults(opts);
 function ConsultaPe() { }
 
 function getEssaludInformation(dni, callback) {
-	var BASE = process.env.URL_ESSALUD;
-	https.get(BASE + '?strDni=' + dni, (response) => {
-		let data = '';
-		let persona = {};
-		response.on('data', (chunk) => {
-			data += chunk;
+
+	var BASE_RENIEC = process.env.URL_RENIEC;
+	var BASE_ESSALUD = process.env.URL_ESSALUD;
+	ciudadano.post(BASE_RENIEC, { form: { "CODDNI": dni } },
+		function (err, response, body) {
+			let item = JSON.parse(body);
+			if (!item.success) {
+				return callback(item.mensaje);
+			}
+			let persona = {};
+			if (err) {
+				return callback(err);
+			} else {
+				if (item.success) {
+					var d = item.data.split("|");
+					persona.dni = dni;
+					persona.nombres = d[2];
+					persona.apellidoPaterno = d[0];
+					persona.apellidoMaterno = d[1];
+					persona.fechaNacimientoUTC = null;
+					persona.fechaNacimiento = null;
+					ciudadano.post(BASE_ESSALUD, { form: { "APE_PAT": persona.apellidoPaterno, "APE_MAT": persona.apellidoMaterno, "NOMBRES": persona.nombres } },
+						function (err, response, body) {
+							if (err) {
+								return callback(err);
+							}
+							const $ = cheerio.load(body);
+							$("table > tr").map((index, element) => {
+								const dniBuscado = $($(element).find("td")[1]).text().replace("ver", "").trim();
+								if (dniBuscado === dni) {
+									persona.fechaNacimientoUTC = $($(element).find("td")[2]).text().replace("ver", "").replace("//","").trim();
+									persona.fechaNacimiento = parseISOString(persona.fechaNacimientoUTC);
+									return persona;
+								}
+							});
+							persona.sexo = "";
+							persona.codVerifica = getCode(dni);
+							return callback(null, persona);
+						});
+				} else {
+					return callback(item.mensaje);
+				}
+			}
 		});
-		response.on('end', () => {
-			var datos = JSON.parse(data);
-			var d = datos.DatosPerson[0];
-			persona.dni = d.DNI;
-			persona.nombres = d.Nombres;
-			persona.apellidoPaterno = d.ApellidoPaterno;
-			persona.apellidoMaterno = d.ApellidoMaterno;
-			persona.fechaNacimientoUTC = d.FechaNacimiento,
-				persona.fechaNacimiento = parseISOString(d.FechaNacimiento);
-			if (d.Sexo === '2')
-				persona.sexo = "MASCULINO";
-			else
-				persona.sexo = "FEMENINO"
-			persona.codVerifica = getCode(d.DNI);
-			return callback(null, persona);
-		});
-	}).on("error", (err) => {
-		return callback(err);
-	});
 }
 
 function parseISOString(stringDate) {

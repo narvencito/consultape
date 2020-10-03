@@ -1,5 +1,6 @@
 const consulta = require("./consulta.controller")
 const sunat = require("./sunat-tipocambio.controller")
+const essalud = require("./essalud.controller")
 
 function searchRuc(req, res) {
     let additional = (req.params.ruc).trim().startsWith('1');
@@ -37,13 +38,16 @@ function searchDni(req, res) {
     });
 }
 
-function searchEssaludDni(req, res) {
+async function searchEssaludDni(req, res) {
     consulta.getEssaludInformation(req.params.dni, function (error, data) {
         if (error) {
             res.status(500).send(error);
         }
         res.status(200).send(data);
     });
+    // console.log( req.headers.cookie.split('; '));
+    // let datos = await essalud.searchDni(req.params.dni);
+    // res.status(200).send(datos);
 }
 
 function getSunatTipoCambioPorDia(req, res) {

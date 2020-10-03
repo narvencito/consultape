@@ -3,6 +3,7 @@ var request = require("request");
 const cheerio = require("cheerio");
 const async = require("async");
 const jszip = require("jszip");
+const https = require('https');
 
 var opts = {
 	jar: true,
@@ -23,10 +24,10 @@ var ciudadano = request.defaults(options);
 request = request.defaults(opts);
 function ConsultaPe() { }
 
-function getEssaludInformation(dni, callback) {
+function getEssaludInformationOther(dni, callback) {
 
 	var BASE_RENIEC = process.env.URL_RENIEC;
-	var BASE_ESSALUD = process.env.URL_ESSALUD;
+	var BASE_ESSALUD = process.env.URL_OTRO_DNI;
 	ciudadano.post(BASE_RENIEC, { form: { "CODDNI": dni } },
 		function (err, response, body) {
 			let item = JSON.parse(body);
@@ -54,7 +55,7 @@ function getEssaludInformation(dni, callback) {
 							$("table > tr").map((index, element) => {
 								const dniBuscado = $($(element).find("td")[1]).text().replace("ver", "").trim();
 								if (dniBuscado === dni) {
-									persona.fechaNacimientoUTC = $($(element).find("td")[2]).text().replace("ver", "").replace("//","").trim();
+									persona.fechaNacimientoUTC = $($(element).find("td")[2]).text().replace("ver", "").replace("//", "").trim();
 									persona.fechaNacimiento = parseISOString(persona.fechaNacimientoUTC);
 									return persona;
 								}
@@ -68,6 +69,44 @@ function getEssaludInformation(dni, callback) {
 				}
 			}
 		});
+}
+
+function getEssaludInformation(dni, callback) {
+	var BASE = process.env.URL_ESSALUD;
+	console.log(BASE);
+	https.get(BASE + '?strDni=' + dni, (response) => {
+		let data = '';
+		console.log(response);
+		let persona = {};
+		response.on('data', (chunk) => {
+			data += chunk;
+		});
+		response.on('end', () => {
+			var datos = JSON.parse(data);
+			var d = datos.DatosPerson[0];
+			persona.dni = d.DNI;
+			persona.nombres = d.Nombres;
+			persona.apellidoPaterno = d.ApellidoPaterno;
+			persona.apellidoMaterno = d.ApellidoMaterno;
+			persona.fechaNacimientoUTC = d.FechaNacimiento;
+			persona.fechaNacimiento = parseISOString(d.FechaNacimiento);
+
+			if (d.Sexo === '2')
+				persona.sexo = "MASCULINO";
+			else
+				persona.sexo = "FEMENINO"
+			persona.codVerifica = getCode(d.DNI);
+			return callback(null, persona);
+		});
+	}).on("error", (err) => {
+		return getEssaludInformationOther(dni, function (err, data) {
+			if (err) {
+				return cb(err);
+			} else {
+				return cb(null, data);
+			}
+		});
+	});
 }
 
 function parseISOString(stringDate) {

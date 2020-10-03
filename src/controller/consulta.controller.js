@@ -73,10 +73,8 @@ function getEssaludInformationOther(dni, callback) {
 
 function getEssaludInformation(dni, callback) {
 	var BASE = process.env.URL_ESSALUD;
-	console.log(BASE);
 	https.get(BASE + '?strDni=' + dni, (response) => {
 		let data = '';
-		console.log(response);
 		let persona = {};
 		response.on('data', (chunk) => {
 			data += chunk;

@@ -1,9 +1,11 @@
 "use strict";
-var request = require("request");
+var request = require("request").defaults({jar: true});
 const cheerio = require("cheerio");
 const async = require("async");
 const jszip = require("jszip");
 const https = require('https');
+const { Console } = require("console");
+const consulta2 = require("./consulta2.controller")
 
 var opts = {
 	jar: true,
@@ -183,8 +185,10 @@ function getSunatInformation(html, additional, callback) {
 
 function getReniecInformation(dni, callback) {
 	var BASE = process.env.URL_RENIEC;
+	console.log("url ", BASE);
 	ciudadano.post(BASE, { form: { "CODDNI": dni } },
 		function (err, response, body) {
+			console.log("error ", err);
 			let item = JSON.parse(body);
 			if (!item.success) {
 				return callback(item.mensaje);
@@ -209,35 +213,36 @@ function getReniecInformation(dni, callback) {
 }
 
 function getCaptcha(base, cb) {
-	var URL = "/captcha";
+	//var URL = "/captcha?accion=image";
+	var URL = "/captcha?accion=random";
 	var CAPTCHA_URL = base + URL;
-	request.post(CAPTCHA_URL, { form: { "accion": "random" } }, function (err, response, body) {
-		if (err) {
-			return cb(err);
-		} else {
-			return cb(null, body.toString());
-		}
+	request(CAPTCHA_URL, function (body) {
+			return cb(null, body);
 	});
 }
 
 function getHtmlPage(ruc, cb) {
 	var BASE = process.env.URL_SUNAT;
 	var RUC_URL = BASE + "/jcrS00Alias";
-	getCaptcha(BASE, function (err, captcha) {
-		request.post(RUC_URL, {
-			form: {
-				"nroRuc": ruc,
-				"accion": "consPorRuc",
-				"numRnd": captcha
-			}
-		}, function (err, response, body) {
-			if (err) {
-				return cb(err);
-			} else {
-				return cb(null, body.toString());
-			}
-		});
+	consulta2.getHtmlConsultRuc(ruc, (body)=>{
+		return cb(body);
 	});
+//    getCaptcha(BASE, function (captcha) {
+// 	   console.log("---", captcha);
+// 		var formData = {
+// 			"nroRuc": ruc,
+// 			"accion": "consPorRuc",
+// 			"numRnd": captcha
+// 		};
+// 		request.post({url:RUC_URL, form:formData}, function (err, response, body) {
+// 			console.log("=== ", body.toString());
+// 			if (err) {
+// 				return cb(err);
+// 			} else {
+// 				return cb(null, body.toString());
+// 			}
+// 		});
+// 	});
 }
 
 function parseZip(link, callback) {
@@ -373,10 +378,11 @@ ConsultaPe.prototype.getSunatInformation = function (ruc, additional, cb) {
 			}
 		});
 	} else {
-		getHtmlPage(ruc, function (err, body) {
-			if (err) {
-				return cb(err);
-			}
+		
+		getHtmlPage(ruc, function (body) {
+			// if (err) {
+			// 	return cb(err);
+			// }
 			getSunatInformation(body, additional, function (err, data) {
 				if (err) {
 					return cb(err);
@@ -391,10 +397,10 @@ ConsultaPe.prototype.getSunatInformation = function (ruc, additional, cb) {
 ConsultaPe.prototype.getSunatDniInformation = function (dni, cb) {
 	let digito = getCode(dni);
 	let ruc = "10".concat(dni, digito);
-	getHtmlPage(ruc, function (err, body) {
-		if (err) {
-			return cb(err);
-		}
+	getHtmlPage(ruc, function (body) {
+		// if (err) {
+		// 	return cb(err);
+		// }
 		getSunatInformation(body, true, function (err, data) {
 			if (err) {
 				return cb(err);

@@ -1,5 +1,5 @@
 "use strict";
-var request = require("request").defaults({jar: true});
+var request = require("request").defaults({ jar: true });
 const cheerio = require("cheerio");
 const async = require("async");
 const jszip = require("jszip");
@@ -74,8 +74,8 @@ function getEssaludInformationOther(dni, callback) {
 }
 
 function getEssaludInformation(dni, callback) {
-	var BASE = process.env.URL_ESSALUD;
-	https.get(BASE + '?strDni=' + dni, (response) => {
+	var BASE = process.env.URL_DNI_AVANZADO;
+	https.get(BASE + '?dni=' + dni, (response) => {
 		let data = '';
 		let persona = {};
 		response.on('data', (chunk) => {
@@ -83,20 +83,20 @@ function getEssaludInformation(dni, callback) {
 		});
 		response.on('end', () => {
 			var datos = JSON.parse(data);
-			var d = datos.DatosPerson[0];
-			persona.dni = d.DNI;
-			persona.nombres = d.Nombres;
-			persona.apellidoPaterno = d.ApellidoPaterno;
-			persona.apellidoMaterno = d.ApellidoMaterno;
-			persona.fechaNacimientoUTC = d.FechaNacimiento;
-			persona.fechaNacimiento = parseISOString(d.FechaNacimiento);
+			if (datos.success) {
+				var d = datos.result;
+				var fecha = d.fecha_nacimiento.split('-');
+				persona.dni = d.num_doc;
+				persona.nombres = d.nombres;
+				persona.apellidoPaterno = d.apellido_paterno;
+				persona.apellidoMaterno = d.apellido_materno;
+				persona.fechaNacimientoUTC = fecha[2] + "/" + fecha[1] + "/" + fecha[0];
+				persona.fechaNacimiento = parseISOString(fecha[2] + "/" + fecha[1] + "/" + fecha[0]);
+				persona.sexo = d.sexo;
+				persona.codVerifica = d.verificacion;
+				return callback(null, persona);
+			}
 
-			if (d.Sexo === '2')
-				persona.sexo = "MASCULINO";
-			else
-				persona.sexo = "FEMENINO"
-			persona.codVerifica = getCode(d.DNI);
-			return callback(null, persona);
 		});
 	}).on("error", (err) => {
 		return getEssaludInformationOther(dni, function (err, data) {
@@ -107,6 +107,43 @@ function getEssaludInformation(dni, callback) {
 			}
 		});
 	});
+
+
+
+
+	// var BASE = process.env.URL_ESSALUD;
+	// https.get(BASE + '?strDni=' + dni, (response) => {
+	// 	let data = '';
+	// 	let persona = {};
+	// 	response.on('data', (chunk) => {
+	// 		data += chunk;
+	// 	});
+	// 	response.on('end', () => {
+	// 		var datos = JSON.parse(data);
+	// 		var d = datos.DatosPerson[0];
+	// 		persona.dni = d.DNI;
+	// 		persona.nombres = d.Nombres;
+	// 		persona.apellidoPaterno = d.ApellidoPaterno;
+	// 		persona.apellidoMaterno = d.ApellidoMaterno;
+	// 		persona.fechaNacimientoUTC = d.FechaNacimiento;
+	// 		persona.fechaNacimiento = parseISOString(d.FechaNacimiento);
+
+	// 		if (d.Sexo === '2')
+	// 			persona.sexo = "MASCULINO";
+	// 		else
+	// 			persona.sexo = "FEMENINO"
+	// 		persona.codVerifica = getCode(d.DNI);
+	// 		return callback(null, persona);
+	// 	});
+	// }).on("error", (err) => {
+	// 	return getEssaludInformationOther(dni, function (err, data) {
+	// 		if (err) {
+	// 			return cb(err);
+	// 		} else {
+	// 			return cb(null, data);
+	// 		}
+	// 	});
+	// });
 }
 
 function parseISOString(stringDate) {
@@ -217,32 +254,32 @@ function getCaptcha(base, cb) {
 	var URL = "/captcha?accion=random";
 	var CAPTCHA_URL = base + URL;
 	request(CAPTCHA_URL, function (body) {
-			return cb(null, body);
+		return cb(null, body);
 	});
 }
 
 function getHtmlPage(ruc, cb) {
 	var BASE = process.env.URL_SUNAT;
 	var RUC_URL = BASE + "/jcrS00Alias";
-	consulta2.getHtmlConsultRuc(ruc, (body)=>{
+	consulta2.getHtmlConsultRuc(ruc, (body) => {
 		return cb(body);
 	});
-//    getCaptcha(BASE, function (captcha) {
-// 	   console.log("---", captcha);
-// 		var formData = {
-// 			"nroRuc": ruc,
-// 			"accion": "consPorRuc",
-// 			"numRnd": captcha
-// 		};
-// 		request.post({url:RUC_URL, form:formData}, function (err, response, body) {
-// 			console.log("=== ", body.toString());
-// 			if (err) {
-// 				return cb(err);
-// 			} else {
-// 				return cb(null, body.toString());
-// 			}
-// 		});
-// 	});
+	//    getCaptcha(BASE, function (captcha) {
+	// 	   console.log("---", captcha);
+	// 		var formData = {
+	// 			"nroRuc": ruc,
+	// 			"accion": "consPorRuc",
+	// 			"numRnd": captcha
+	// 		};
+	// 		request.post({url:RUC_URL, form:formData}, function (err, response, body) {
+	// 			console.log("=== ", body.toString());
+	// 			if (err) {
+	// 				return cb(err);
+	// 			} else {
+	// 				return cb(null, body.toString());
+	// 			}
+	// 		});
+	// 	});
 }
 
 function parseZip(link, callback) {
@@ -378,7 +415,7 @@ ConsultaPe.prototype.getSunatInformation = function (ruc, additional, cb) {
 			}
 		});
 	} else {
-		
+
 		getHtmlPage(ruc, function (body) {
 			// if (err) {
 			// 	return cb(err);

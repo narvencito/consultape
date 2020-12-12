@@ -27,7 +27,6 @@ request = request.defaults(opts);
 function ConsultaPe() { }
 
 function getEssaludInformationOther(dni, callback) {
-
 	var BASE_RENIEC = process.env.URL_RENIEC;
 	var BASE_ESSALUD = process.env.URL_OTRO_DNI;
 	ciudadano.post(BASE_RENIEC, { form: { "CODDNI": dni } },
@@ -74,39 +73,51 @@ function getEssaludInformationOther(dni, callback) {
 }
 
 function getEssaludInformation(dni, callback) {
-	var BASE = process.env.URL_DNI_AVANZADO;
-	https.get(BASE + '?dni=' + dni, (response) => {
-		let data = '';
-		let persona = {};
-		response.on('data', (chunk) => {
-			data += chunk;
-		});
-		response.on('end', () => {
-			var datos = JSON.parse(data);
-			if (datos.success) {
-				var d = datos.result;
-				var fecha = d.fecha_nacimiento.split('-');
-				persona.dni = d.num_doc;
-				persona.nombres = d.nombres;
-				persona.apellidoPaterno = d.apellido_paterno;
-				persona.apellidoMaterno = d.apellido_materno;
-				persona.fechaNacimientoUTC = fecha[2] + "/" + fecha[1] + "/" + fecha[0];
-				persona.fechaNacimiento = parseISOString(fecha[2] + "/" + fecha[1] + "/" + fecha[0]);
-				persona.sexo = d.sexo;
-				persona.codVerifica = d.verificacion;
-				return callback(null, persona);
-			}
 
-		});
-	}).on("error", (err) => {
-		return getEssaludInformationOther(dni, function (err, data) {
-			if (err) {
-				return cb(err);
-			} else {
-				return cb(null, data);
-			}
-		});
+	return getEssaludInformationOther(dni, function (err, data) {
+		if (err) {
+			return callback(err);
+		} else {
+			return callback(null, data);
+		}
 	});
+	
+	// var BASE = process.env.URL_DNI_AVANZADO;
+	// https.get(BASE + '?dni=' + dni, (response) => {
+	// 	let data = '';
+	// 	let persona = {};
+	// 	response.on('data', (chunk) => {
+	// 		data += chunk;
+	// 	});
+	// 	response.on('end', () => {
+	// 		var datos = JSON.parse(data);
+	// 		if (datos.success) {
+	// 			var d = datos.result;
+	// 			var fecha = d.fecha_nacimiento.split('-');
+	// 			persona.dni = d.num_doc;
+	// 			persona.nombres = d.nombres;
+	// 			persona.apellidoPaterno = d.apellido_paterno;
+	// 			persona.apellidoMaterno = d.apellido_materno;
+	// 			persona.fechaNacimientoUTC = fecha[2] + "/" + fecha[1] + "/" + fecha[0];
+	// 			persona.fechaNacimiento = parseISOString(fecha[2] + "/" + fecha[1] + "/" + fecha[0]);
+	// 			persona.sexo = d.sexo;
+	// 			persona.codVerifica = d.verificacion;
+	// 			return callback(null, persona);
+	// 		}
+	// 		else {
+	// 			return getEssaludInformationOther(dni, function (err, data) {
+	// 				if (err) {
+	// 					return callback(err);
+	// 				} else {
+	// 					return callback(null, data);
+	// 				}
+	// 			});
+	// 		}
+
+	// 	});
+	// }).on("error", (err) => {
+	// 	return callback(err);
+	// });
 
 
 
@@ -138,9 +149,9 @@ function getEssaludInformation(dni, callback) {
 	// }).on("error", (err) => {
 	// 	return getEssaludInformationOther(dni, function (err, data) {
 	// 		if (err) {
-	// 			return cb(err);
+	// 			return callback(err);
 	// 		} else {
-	// 			return cb(null, data);
+	// 			return callback(null, data);
 	// 		}
 	// 	});
 	// });
@@ -222,10 +233,8 @@ function getSunatInformation(html, additional, callback) {
 
 function getReniecInformation(dni, callback) {
 	var BASE = process.env.URL_RENIEC;
-	console.log("url ", BASE);
 	ciudadano.post(BASE, { form: { "CODDNI": dni } },
 		function (err, response, body) {
-			console.log("error ", err);
 			let item = JSON.parse(body);
 			if (!item.success) {
 				return callback(item.mensaje);
@@ -265,14 +274,12 @@ function getHtmlPage(ruc, cb) {
 		return cb(body);
 	});
 	//    getCaptcha(BASE, function (captcha) {
-	// 	   console.log("---", captcha);
 	// 		var formData = {
 	// 			"nroRuc": ruc,
 	// 			"accion": "consPorRuc",
 	// 			"numRnd": captcha
 	// 		};
 	// 		request.post({url:RUC_URL, form:formData}, function (err, response, body) {
-	// 			console.log("=== ", body.toString());
 	// 			if (err) {
 	// 				return cb(err);
 	// 			} else {

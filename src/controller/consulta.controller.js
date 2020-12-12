@@ -192,7 +192,7 @@ function getCode(dni) {
 
 function getSunatInformation(html, additional, callback) {
 	try {
-		var $ = cheerio.load(html);
+		var $ = cheerio.load(html, {decodeEntities:false});
 		var table = $("table").first().children("tr");
 		var contribuyente = {};
 		var rzhtml = table.first().children().eq(1).html();
